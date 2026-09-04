@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pintar Kata - Game Edukasi Anak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #FFDE59;
+    --sky-top: #6FCBFF;
+    --sky-bottom: #C9ECFF;
+    --grass: #4CAF7D;
+    --grass-dark: #3B9367;
+    --letter-bg: #FF7A59;
+    --letter-bg-dark: #E85F3F;
+    --purple: #7C6CF0;
+    --ink: #2B3A4A;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    margin: 0; padding: 0; min-height: 100vh;
+    font-family: 'Baloo 2', system-ui, sans-serif;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 60%, #fff 100%);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; touch-action: manipulation;
+  }
+
+  /* Animasi Latar Belakang */
+  .sun {
+    position: absolute; top: 5%; right: 10%; width: 80px; height: 80px;
+    background: #FFD93D; border-radius: 50%;
+    box-shadow: 0 0 40px rgba(255, 217, 61, 0.6);
+    z-index: 0;
+  }
+
+  .cloud { position: absolute; background: #fff; border-radius: 50px; opacity: 0.9; z-index: 0; animation: moveCloud 20s linear infinite; }
+  .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud1 { width: 120px; height: 40px; top: 15%; left: -150px; }
+  .cloud1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+  .cloud1::after { width: 50px; height: 50px; top: -20px; left: 55px; }
+
+  @keyframes moveCloud {
+    from { transform: translateX(0vw); }
+    to { transform: translateX(120vw); }
+  }
+
+  /* Container Utama */
+  .game-container {
+    position: relative; width: min(480px, 95vw);
+    background: #fff; border-radius: 40px;
+    padding: 25px; box-shadow: 0 20px 0 rgba(0,0,0,0.05), 0 30px 60px rgba(0,0,0,0.1);
+    z-index: 10; text-align: center;
+    border: 8px solid #F1F6FA;
+  }
+
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .score-badge {
+    background: #FFF6DA; padding: 8px 16px; border-radius: 20px;
+    font-weight: 800; color: #B8860B; display: flex; align-items: center; gap: 8px;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+  }
+  .progress-text { font-weight: 700; color: #7C8B96; font-size: 18px; }
+
+  /* Stage / Gambar */
+  .stage {
+    background: #F8FDFF; border: 4px dashed #D0E8F5; border-radius: 30px;
+    height: 220px; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; position: relative; overflow: hidden;
+  }
+  .critter-img {
+    max-width: 85%; max-height: 85%; object-fit: contain;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(2deg); } }
+
+  /* Slot & Huruf */
+  .slots { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 25px; min-height: 60px; }
+  .slot {
+    width: 48px; height: 58px; background: #fff; border: 3px solid #E1E8ED;
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: var(--ink);
+    box-shadow: 0 4px 0 #E1E8ED; transition: all 0.2s;
+  }
+  .slot.filled { border-color: var(--letter-bg); color: #fff; background: var(--letter-bg); box-shadow: 0 4px 0 var(--letter-bg-dark); }
+  .slot.wrong { animation: shake 0.4s; border-color: #FF4D4D; background: #FFE3E3; color: #FF4D4D; }
+
+  .bank { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .letter-btn {
+    width: 52px; height: 52px; background: #7C6CF0; border: none;
+    border-radius: 16px; color: #fff; font-size: 26px; font-weight: 800;
+    box-shadow: 0 6px 0 #5A4CC4; cursor: pointer; transition: 0.1s;
+    font-family: inherit;
+  }
+  .letter-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #5A4CC4; }
+  .letter-btn.used { opacity: 0.3; pointer-events: none; transform: scale(0.9); }
+
+  /* Overlay */
+  .overlay {
+    position: absolute; inset: 0; background: rgba(255,255,255,0.98);
+    z-index: 100; border-radius: 32px; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .win-emoji { font-size: 80px; margin-bottom: 10px; animation: bounce 1s infinite; }
+  .win-title { font-size: 32px; font-weight: 800; color: var(--purple); margin: 0; }
+  .win-msg { font-size: 20px; color: #6b7a86; margin-bottom: 20px; }
+
+  .primary-btn {
+    background: var(--grass); color: #fff; border: none; padding: 15px 40px;
+    font-size: 22px; font-weight: 800; border-radius: 999px;
+    box-shadow: 0 6px 0 var(--grass-dark); cursor: pointer; font-family: inherit;
+  }
+  .primary-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--grass-dark); }
+
+  /* Start Screen */
+  #startScreen { display: flex; }
+
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+  .hint-bubble {
+    position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px;
+    background: #FFD93D; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: #B8860B; cursor: pointer; box-shadow: 0 4px 0 #D4B531;
+  }
+</style>
+</head>
+<body>
+  <div class="sun"></div>
+  <div class="cloud cloud1"></div>
+
+  <!-- Start Screen -->
+  <div id="startScreen" class="overlay">
+    <div class="win-emoji">🎮</div>
+    <h1 class="win-title">Pintar Kata</h1>
+    <p class="win-msg">Ayo belajar sambil bermain!</p>
+    <button class="primary-btn" onclick="startGame()">MULAI MAIN</button>
+  </div>
+
+  <div class="game-container">
+    <div class="header">
+      <div class="score-badge">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="#FFD54B"><path d="M12 2l2.9 6.6L22 9.3l-5 4.9 1.2 7.1L12 17.8 5.8 21.3 7 14.2 2 9.3l7.1-.7z"/></svg>
+        <span id="score">0</span>
+      </div>
+      <div class="progress-text" id="progress">1 / 100</div>
+    </div>
+
+    <h2 style="margin: 0 0 15px; color: #5A6A78; font-size: 22px;">Ini Gambar Apa?</h2>
+
+    <div class="stage">
+      <img id="mainImg" class="critter-img" src="" alt="Soal">
+      <div class="hint-bubble" onclick="giveHint()">?</div>
+    </div>
+
+    <div class="slots" id="slots"></div>
+    <div class="bank" id="bank"></div>
+
+    <!-- Win Overlay -->
+    <div id="winOverlay" class="overlay">
+      <div class="win-emoji" id="winEmoji">🌟</div>
+      <h2 class="win-title" id="winTitle">Luar Biasa!</h2>
+      <p class="win-msg" id="winMsg">Kamu berhasil menyusun katanya.</p>
+      <button class="primary-btn" onclick="nextWord()">LANJUT</button>
+    </div>
+  </div>
+
+<script>
+const DATA = [{"a": "KUCING", "i": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500"}, {"a": "ANJING", "i": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500"}, {"a": "AYAM", "i": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=500"}, {"a": "BEBEK", "i": "https://images.unsplash.com/photo-1555852095-64e7428df025?w=500"}, {"a": "SAPI", "i": "https://images.unsplash.com/photo-1546445317-29f4545f9d52?w=500"}, {"a": "KAMBING", "i": "https://images.unsplash.com/photo-1524024973431-2ad916746881?w=500"}, {"a": "KUDA", "i": "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=500"}, {"a": "GAJAH", "i": "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=500"}, {"a": "HARIMAU", "i": "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=500"}, {"a": "SINGA", "i": "https://images.unsplash.com/photo-1614027164847-1b28cfe1df60?w=500"}, {"a": "MONYET", "i": "https://images.unsplash.com/photo-1540573133985-7585812a2a0d?w=500"}, {"a": "KELINCI", "i": "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=500"}, {"a": "BERUANG", "i": "https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=500"}, {"a": "PANDA", "i": "https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?w=500"}, {"a": "RUBAH", "i": "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=500"}, {"a": "SERIGALA", "i": "https://images.unsplash.com/photo-1564466809058-bf4114d55352?w=500"}, {"a": "TIKUS", "i": "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=500"}, {"a": "KATAK", "i": "https://images.unsplash.com/photo-1550952230-019a16f6b0f0?w=500"}, {"a": "ULAR", "i": "https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=500"}, {"a": "IKAN", "i": "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?w=500"}, {"a": "HIU", "i": "https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=500"}, {"a": "GURITA", "i": "https://images.unsplash.com/photo-1545671913-b89ac1b4ac10?w=500"}, {"a": "KEPITING", "i": "https://images.unsplash.com/photo-1559737520-213c4c9247d7?w=500"}, {"a": "UDANG", "i": "https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=500"}, {"a": "LEBAH", "i": "https://images.unsplash.com/photo-1587049352847-81222956c12c?w=500"}, {"a": "BURUNG", "i": "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=500"}, {"a": "ELANG", "i": "https://images.unsplash.com/photo-1611095973763-414019e72400?w=500"}, {"a": "BUAYA", "i": "https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?w=500"}, {"a": "JERAPAH", "i": "https://images.unsplash.com/photo-1547721064-da6cfb341d50?w=500"}, {"a": "ZEBRA", "i": "https://images.unsplash.com/photo-1501705388883-4ed8a543392c?w=500"}, {"a": "UNTA", "i": "https://images.unsplash.com/photo-1551085254-e96b210df58a?w=500"}, {"a": "KANGGURU", "i": "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500"}, {"a": "KOALA", "i": "https://images.unsplash.com/photo-1459257831348-f0cdd359235f?w=500"}, {"a": "LANDAK", "i": "https://images.unsplash.com/photo-1535241749838-299277b6305f?w=500"}, {"a": "TUPAI", "i": "https://images.unsplash.com/photo-1504006833117-8886a355efbf?w=500"}, {"a": "DOMBA", "i": "https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=500"}, {"a": "RUSA", "i": "https://images.unsplash.com/photo-1484406566174-9da000fda645?w=500"}, {"a": "APEL", "i": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500"}, {"a": "PISANG", "i": "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=500"}, {"a": "JERUK", "i": "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=500"}, {"a": "ANGGUR", "i": "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=500"}, {"a": "SEMANGKA", "i": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=500"}, {"a": "MANGGA", "i": "https://images.unsplash.com/photo-1553279768-865429fa0078?w=500"}, {"a": "STROBERI", "i": "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500"}, {"a": "ROTI", "i": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500"}, {"a": "KUE", "i": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500"}, {"a": "PERMEN", "i": "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=500"}, {"a": "COKELAT", "i": "https://images.unsplash.com/photo-1511381939415-e44015466834?w=500"}, {"a": "TELUR", "i": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=500"}, {"a": "SUSU", "i": "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500"}, {"a": "PIZZA", "i": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500"}, {"a": "ES KRIM", "i": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500"}, {"a": "JAGUNG", "i": "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=500"}, {"a": "TOMAT", "i": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500"}, {"a": "KENTANG", "i": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500"}, {"a": "TOPI", "i": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=500"}, {"a": "PAYUNG", "i": "https://images.unsplash.com/photo-1517479149777-5f3b77a11b9f?w=500"}, {"a": "SEPATU", "i": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500"}, {"a": "TAS", "i": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500"}, {"a": "PENSIL", "i": "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=500"}, {"a": "JAM", "i": "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=500"}, {"a": "KUNCI", "i": "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=500"}, {"a": "KURSI", "i": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=500"}, {"a": "PINTU", "i": "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=500"}, {"a": "GELAS", "i": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500"}, {"a": "SENDOK", "i": "https://images.unsplash.com/photo-1584345604476-8ec5e12e42dd?w=500"}, {"a": "MOBIL", "i": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=500"}, {"a": "BUS", "i": "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=500"}, {"a": "SEPEDA", "i": "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=500"}, {"a": "KERETA", "i": "https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=500"}, {"a": "PESAWAT", "i": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500"}, {"a": "KAPAL", "i": "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=500"}, {"a": "TRUK", "i": "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500"}, {"a": "ROKET", "i": "https://images.unsplash.com/photo-1517976487492-5750f3195933?w=500"}, {"a": "MATAHARI", "i": "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=500"}, {"a": "BULAN", "i": "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?w=500"}, {"a": "BINTANG", "i": "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=500"}, {"a": "AWAN", "i": "https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=500"}, {"a": "PELANGI", "i": "https://images.unsplash.com/photo-1508615070457-7ba34003ab59?w=500"}, {"a": "POHON", "i": "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=500"}, {"a": "MAWAR", "i": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500"}, {"a": "GUNUNG", "i": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500"}, {"a": "PANTAI", "i": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500"}, {"a": "RUMAH", "i": "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500"}, {"a": "KOMPUTER", "i": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500"}];
+
+let currentIndex = 0;
+let score = 0;
+let gameData = [];
+let currentAttempt = [];
+let bank = [];
+let audioCtx = null;
+
+// Sound Engine
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playNote(freq, type, start, duration, vol) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  gain.gain.setValueAtTime(vol, start);
+  gain.gain.exponentialRampToValueAtTime(0.01, start + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(start);
+  osc.stop(start + duration);
+}
+
+function sfxClick() {
+  playNote(600, 'sine', audioCtx.currentTime, 0.1, 0.2);
+}
+
+function sfxSuccess() {
+  const t = audioCtx.currentTime;
+  const scale = [523.25, 659.25, 783.99, 1046.50];
+  scale.forEach((f, i) => playNote(f, 'triangle', t + i*0.1, 0.4, 0.2));
+}
+
+function sfxFail() {
+  const t = audioCtx.currentTime;
+  playNote(220, 'sawtooth', t, 0.3, 0.1);
+  playNote(180, 'sawtooth', t + 0.1, 0.3, 0.1);
+}
+
+// Speech Engine
+function speak(text) {
+  if ('speechSynthesis' in window) {
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = 'id-ID';
+    msg.rate = 0.9;
+    window.speechSynthesis.speak(msg);
+  }
+}
+
+// Game Logic
+function startGame() {
+  initAudio();
+  document.getElementById('startScreen').style.display = 'none';
+  gameData = [...DATA].sort(() => Math.random() - 0.5);
+  loadLevel();
+}
+
+function loadLevel() {
+  const item = gameData[currentIndex];
+  document.getElementById('mainImg').src = item.i;
+  document.getElementById('progress').textContent = `${currentIndex + 1} / ${gameData.length}`;
+  
+  const cleanWord = item.a.replace(/\s/g, '');
+  currentAttempt = new Array(cleanWord.length).fill(null);
+
+  // Render Slots
+  const slotsDiv = document.getElementById('slots');
+  slotsDiv.innerHTML = '';
+  for(let i=0; i<cleanWord.length; i++) {
+    const s = document.createElement('div');
+    s.className = 'slot';
+    s.onclick = () => removeLetter(i);
+    slotsDiv.appendChild(s);
+  }
+
+  // Prep Bank
+  bank = cleanWord.split('').map((char, id) => ({ char, id, used: false }));
+  bank.sort(() => Math.random() - 0.5);
+  renderBank();
+
+  document.getElementById('winOverlay').style.display = 'none';
+}
+
+function renderBank() {
+  const bankDiv = document.getElementById('bank');
+  bankDiv.innerHTML = '';
+  bank.forEach((item, index) => {
+    const b = document.createElement('button');
+    b.className = `letter-btn ${item.used ? 'used' : ''}`;
+    b.textContent = item.char;
+    b.onclick = () => placeLetter(index);
+    bankDiv.appendChild(b);
+  });
+}
+
+function placeLetter(bankIndex) {
+  const item = bank[bankIndex];
+  if(item.used) return;
+
+  const emptyIdx = currentAttempt.indexOf(null);
+  if(emptyIdx === -1) return;
+
+  sfxClick();
+  speak(item.char);
+
+  item.used = true;
+  currentAttempt[emptyIdx] = bankIndex;
+
+  updateSlots();
+  renderBank();
+
+  if(!currentAttempt.includes(null)) checkAnswer();
+}
+
+function removeLetter(slotIdx) {
+  const bankIdx = currentAttempt[slotIdx];
+  if(bankIdx === null) return;
+
+  bank[bankIdx].used = false;
+  currentAttempt[slotIdx] = null;
+
+  sfxClick();
+  updateSlots();
+  renderBank();
+}
+
+function updateSlots() {
+  const slotEls = document.querySelectorAll('.slot');
+  currentAttempt.forEach((bankIdx, i) => {
+    if(bankIdx !== null) {
+      slotEls[i].textContent = bank[bankIdx].char;
+      slotEls[i].classList.add('filled');
+    } else {
+      slotEls[i].textContent = '';
+      slotEls[i].classList.remove('filled', 'wrong');
+    }
+  });
+}
+
+function checkAnswer() {
+  const target = gameData[currentIndex].a.replace(/\s/g, '');
+  const guess = currentAttempt.map(idx => bank[idx].char).join('');
+
+  if(guess === target) {
+    score += 10;
+    document.getElementById('score').textContent = score;
+    sfxSuccess();
+    setTimeout(() => {
+      speak(gameData[currentIndex].a);
+      showWin();
+    }, 500);
+  } else {
+    sfxFail();
+    document.querySelectorAll('.slot').forEach(s => s.classList.add('wrong'));
+    setTimeout(() => {
+      currentAttempt.forEach((bIdx, i) => {
+        if(bIdx !== null) bank[bIdx].used = false;
+        currentAttempt[i] = null;
+      });
+      updateSlots();
+      renderBank();
+    }, 800);
+  }
+}
+
+function showWin() {
+  const phrases = [
+    {t: "Hebat!", m: "Kamu pintar sekali!", e: "🎉"},
+    {t: "Luar Biasa!", m: "Jawabanmu tepat!", e: "🌟"},
+    {t: "Keren!", m: "Ayo lanjut lagi!", e: "🏆"}
+  ];
+  const p = phrases[Math.floor(Math.random() * phrases.length)];
+  document.getElementById('winTitle').textContent = p.t;
+  document.getElementById('winMsg').textContent = p.m;
+  document.getElementById('winEmoji').textContent = p.e;
+  document.getElementById('winOverlay').style.display = 'flex';
+}
+
+function nextWord() {
+  currentIndex++;
+  if(currentIndex >= gameData.length) {
+    currentIndex = 0;
+    gameData.sort(() => Math.random() - 0.5);
+  }
+  loadLevel();
+}
+
+function giveHint() {
+  const target = gameData[currentIndex].a.replace(/\s/g, '');
+  const emptyIdx = currentAttempt.indexOf(null);
+  if(emptyIdx === -1) return;
+
+  const neededChar = target[emptyIdx];
+  const bankIdx = bank.findIndex(b => !b.used && b.char === neededChar);
+  if(bankIdx !== -1) placeLetter(bankIdx);
+}
+</script>
+</body>
+</html>

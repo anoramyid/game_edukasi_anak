@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bermain Tebak Gambar - Suara Kakak Ceria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg-sky: #6FCBFF; --btn-start: #FF7A59; --btn-next: #4CAF7D; --purple: #7C6CF0; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 0; min-height: 100vh; font-family: 'Baloo 2', system-ui, sans-serif; background: linear-gradient(180deg, #6FCBFF 0%, #C9ECFF 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; touch-action: manipulation; }
+  .sun { position: absolute; top: 40px; right: 40px; width: 70px; height: 70px; background: #FFD93D; border-radius: 50%; box-shadow: 0 0 30px #FFD93D; }
+  .cloud { position: absolute; background: #fff; border-radius: 50px; opacity: 0.9; animation: moveCloud 30s linear infinite; }
+  .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud1 { width: 100px; height: 35px; top: 100px; left: -120px; }
+  @keyframes moveCloud { from { transform: translateX(0vw); } to { transform: translateX(120vw); } }
+  .start-screen { position: fixed; inset: 0; z-index: 1000; background: linear-gradient(135deg, #FFDE59 0%, #FF914D 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .start-card { background: #fff; padding: 40px; border-radius: 50px; box-shadow: 0 20px 0 rgba(0,0,0,0.1); width: 90%; max-width: 400px; border: 10px solid #FFF6DA; }
+  .game-container { position: relative; width: min(460px, 92vw); background: #fff; border-radius: 40px; padding: 20px; border: 8px solid #F1F6FA; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .score { background: #FFF6DA; padding: 5px 15px; border-radius: 20px; font-weight: 800; color: #B8860B; }
+  .stage { background: #F8FDFF; border: 4px dashed #D0E8F5; border-radius: 30px; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; }
+  .main-img { max-width: 80%; max-height: 80%; object-fit: contain; animation: bounce 3s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .slots { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .slot { width: 45px; height: 55px; border: 3px solid #E1E8ED; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: #2B3A4A; cursor: pointer; }
+  .slot.filled { background: var(--purple); color: #fff; border-color: #5A4CC4; }
+  .slot.wrong { animation: shake 0.4s; background: #FFDEDE; border-color: #FF4D4D; }
+  .bank { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .btn-letter { width: 50px; height: 50px; background: #FF7A59; border: none; border-radius: 15px; color: #fff; font-size: 24px; font-weight: 800; box-shadow: 0 5px 0 #E85F3F; cursor: pointer; font-family: inherit; }
+  .btn-letter.used { opacity: 0; pointer-events: none; }
+  .overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; border-radius: 32px; display: none; flex-direction: column; align-items: center; justify-content: center; }
+  .primary-btn { background: var(--btn-next); color: #fff; border: none; padding: 12px 35px; font-size: 22px; font-weight: 800; border-radius: 999px; box-shadow: 0 5px 0 #3B9367; cursor: pointer; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+</style>
+</head>
+<body>
+  <div class="sun"></div><div class="cloud cloud1"></div>
+  <div id="startScreen" class="start-screen">
+    <div class="start-card">
+      <div style="font-size: 60px;">🎒</div>
+      <h1 style="font-size:42px; color:var(--purple); margin:0; margin-bottom:30px;">BERMAIN TEBAK GAMBAR</h1>
+      <button class="primary-btn" onclick="startGame()" style="background:var(--btn-start); box-shadow:0 6px 0 #E85F3F;">MULAI MAIN</button>
+    </div>
+  </div>
+  <div class="game-container">
+    <div class="header">
+      <div class="score"><span id="scoreVal">0</span> ⭐</div>
+      <div style="font-weight:800; color:#7C8B96;" id="progressText">1 / 100</div>
+    </div>
+    <div class="stage">
+      <img id="mainImg" class="main-img" src="" alt="Soal">
+      <div style="position:absolute; bottom:10px; right:10px; width:40px; height:40px; background:#FFD93D; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; color:#B8860B; cursor:pointer;" onclick="giveHint()">?</div>
+    </div>
+    <div id="slots" class="slots"></div>
+    <div id="bank" class="bank"></div>
+    <div id="winOverlay" class="overlay">
+      <div style="font-size:80px; margin-bottom:10px;">🏆</div>
+      <h2 style="font-size:32px; color:var(--purple); margin:0;">HEBAT!</h2>
+      <p id="winMsgText" style="font-weight:800; color:#7C8B96; margin-bottom:20px;">Kamu benar!</p>
+      <button class="primary-btn" onclick="nextLevel()">LANJUT ▶</button>
+    </div>
+  </div>
+<script>
+const DATA = [
+  {"a":"KUDA","i":"assets/images/kuda.jpg"},{"a":"IKAN","i":"assets/images/ikan.jpg"},{"a":"ULAR","i":"assets/images/ular.jpg"},{"a":"HIU","i":"assets/images/hiu.jpg"},{"a":"ROTI","i":"assets/images/roti.jpg"},{"a":"APEL","i":"assets/images/apel.jpg"},{"a":"JAM","i":"assets/images/jam.jpg"},{"a":"BUS","i":"assets/images/bus.jpg"},{"a":"KUE","i":"assets/images/kue.jpg"},{"a":"MADU","i":"assets/images/madu.jpg"},{"a":"SUSU","i":"assets/images/susu.jpg"},{"a":"TOPI","i":"assets/images/topi.jpg"},{"a":"BOLA","i":"assets/images/bola_basket.jpg"},{"a":"RUSA","i":"assets/images/rusa.jpg"},{"a":"AYAM","i":"assets/images/ayam.jpg"},{"a":"KUCING","i":"assets/images/kucing.jpg"},{"a":"ANJING","i":"assets/images/anjing.jpg"},{"a":"GAJAH","i":"assets/images/gajah.jpg"},{"a":"SINGA","i":"assets/images/singa.jpg"},{"a":"MONYET","i":"assets/images/monyet.jpg"},
+  {"a":"HARIMAU","i":"assets/images/harimau.jpg"},{"a":"KELINCI","i":"assets/images/kelinci.jpg"},{"a":"BERUANG","i":"assets/images/beruang.jpg"},{"a":"RUBAH","i":"assets/images/rubah.jpg"},{"a":"TIKUS","i":"assets/images/tikus.jpg"},{"a":"KATAK","i":"assets/images/katak.jpg"},{"a":"GURITA","i":"assets/images/gurita.jpg"},{"a":"UDANG","i":"assets/images/udang.jpg"},{"a":"LEBAH","i":"assets/images/lebah.jpg"},{"a":"ELANG","i":"assets/images/elang.jpg"},{"a":"BUAYA","i":"assets/images/buaya.jpg"},{"a":"ZEBRA","i":"assets/images/zebra.jpg"},{"a":"UNTA","i":"assets/images/unta.jpg"},{"a":"KOALA","i":"assets/images/koala.jpg"},{"a":"LANDAK","i":"assets/images/landak.jpg"},{"a":"TUPAI","i":"assets/images/tupai.jpg"},{"a":"DOMBA","i":"assets/images/domba.jpg"},{"a":"PISANG","i":"assets/images/pisang.jpg"},{"a":"JERUK","i":"assets/images/jeruk.jpg"},{"a":"ANGGUR","i":"assets/images/anggur.jpg"},{"a":"MANGGA","i":"assets/images/mangga.jpg"},{"a":"PERMEN","i":"assets/images/permen.jpg"},{"a":"TELUR","i":"assets/images/telur.jpg"},{"a":"PIZZA","i":"assets/images/pizza.jpg"},{"a":"JAGUNG","i":"assets/images/jagung.jpg"},{"a":"TOMAT","i":"assets/images/tomat.jpg"},{"a":"SEPATU","i":"assets/images/sepatu.jpg"},{"a":"PENSIL","i":"assets/images/pensil.jpg"},{"a":"KUNCI","i":"assets/images/kunci.jpg"},{"a":"KURSI","i":"assets/images/kursi.jpg"},{"a":"PINTU","i":"assets/images/pintu.jpg"},{"a":"GELAS","i":"assets/images/gelas.jpg"},{"a":"SENDOK","i":"assets/images/sendok.jpg"},{"a":"MOBIL","i":"assets/images/mobil.jpg"},{"a":"SEPEDA","i":"assets/images/sepeda.jpg"},{"a":"KERETA","i":"assets/images/kereta.jpg"},{"a":"KAPAL","i":"assets/images/kapal.jpg"},{"a":"TRUK","i":"assets/images/truk.jpg"},{"a":"ROKET","i":"assets/images/roket.jpg"},{"a":"BULAN","i":"assets/images/bulan.jpg"},{"a":"AWAN","i":"assets/images/awan.jpg"},{"a":"POHON","i":"assets/images/pohon.jpg"},{"a":"MAWAR","i":"assets/images/bunga_mawar.jpg"},{"a":"GUNUNG","i":"assets/images/gunung.jpg"},{"a":"PANTAI","i":"assets/images/pantai.jpg"},{"a":"RUMAH","i":"assets/images/rumah.jpg"}
+];
+let curIdx = 0, score = 0, levels = [], curAttempt = [], curBank = [], audioCtx = null;
+
+function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+// FUNGSI AUDIO LOKAL (Offline & Pasti Cewe)
+function playLocalAudio(path, rate = 1.3) {
+  const audio = new Audio(path);
+  audio.playbackRate = rate;
+  audio.play().catch(e => console.warn("Audio error:", path));
+}
+
+function eja(char) {
+  playLocalAudio(`assets/audio/alphabet/${char.toLowerCase()}.mp3`, 1.4);
+}
+
+function sebutKata(kata) {
+  const fileName = kata.toLowerCase().replace(/\s/g, '_');
+  playLocalAudio(`assets/audio/words/${fileName}.mp3`, 1.2);
+}
+
+function playNote(f, type, t, d, v) {
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.01, t + d);
+  o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + d);
+}
+
+function startGame() {
+  initAudio(); document.getElementById('startScreen').style.display = 'none';
+  const easy = DATA.slice(0, 20).sort(() => Math.random() - 0.5);
+  const rest = DATA.slice(20).sort(() => Math.random() - 0.5);
+  levels = [...easy, ...rest]; loadLevel();
+}
+
+function loadLevel() {
+  const item = levels[curIdx];
+  document.getElementById('mainImg').src = item.i;
+  document.getElementById('progressText').textContent = `${curIdx + 1} / ${levels.length}`;
+  const clean = item.a.replace(/\s/g, '');
+  curAttempt = new Array(clean.length).fill(null);
+  const slotsDiv = document.getElementById('slots'); slotsDiv.innerHTML = '';
+  for(let i=0; i<clean.length; i++) {
+    const s = document.createElement('div'); s.className = 'slot';
+    s.onclick = () => removeLetter(i); slotsDiv.appendChild(s);
+  }
+  curBank = clean.split('').map((char, id) => ({ char, id, used: false })).sort(() => Math.random() - 0.5);
+  renderBank(); document.getElementById('winOverlay').style.display = 'none';
+}
+
+function renderBank() {
+  const div = document.getElementById('bank'); div.innerHTML = '';
+  curBank.forEach((item, index) => {
+    const b = document.createElement('button'); b.className = `btn-letter ${item.used ? 'used' : ''}`;
+    b.textContent = item.char; b.onclick = () => placeLetter(index); div.appendChild(b);
+  });
+}
+
+function placeLetter(bIdx) {
+  if (curBank[bIdx].used) return;
+  const empty = curAttempt.indexOf(null); if(empty === -1) return;
+  eja(curBank[bIdx].char);
+  curBank[bIdx].used = true; curAttempt[empty] = bIdx;
+  updateSlots(); renderBank();
+  if(!curAttempt.includes(null)) checkAnswer();
+}
+
+function removeLetter(sIdx) {
+  const bIdx = curAttempt[sIdx]; if(bIdx === null) return;
+  curBank[bIdx].used = false; curAttempt[sIdx] = null;
+  updateSlots(); renderBank();
+}
+
+function updateSlots() {
+  const els = document.querySelectorAll('.slot');
+  curAttempt.forEach((bIdx, i) => {
+    if(bIdx !== null) { els[i].textContent = curBank[bIdx].char; els[i].classList.add('filled'); }
+    else { els[i].textContent = ''; els[i].classList.remove('filled', 'wrong'); }
+  });
+}
+
+function checkAnswer() {
+  const target = levels[curIdx].a.replace(/\s/g, '');
+  const guess = curAttempt.map(idx => curBank[idx].char).join('');
+  if(guess === target) {
+    score += 10; document.getElementById('scoreVal').textContent = score;
+    const t = audioCtx.currentTime; [523, 659, 783, 1046].forEach((f, i) => playNote(f, 'triangle', t+i*0.1, 0.4, 0.2));
+    setTimeout(() => {
+      sebutKata(levels[curIdx].a);
+      document.getElementById('winMsgText').textContent = "Jawaban: " + levels[curIdx].a;
+      document.getElementById('winOverlay').style.display = 'flex';
+    }, 600);
+  } else {
+    const t = audioCtx.currentTime; [220, 196, 164].forEach((f, i) => playNote(f, 'sawtooth', t+i*0.2, 0.5, 0.2));
+    document.querySelectorAll('.slot').forEach(s => s.classList.add('wrong'));
+    setTimeout(() => {
+      curAttempt.forEach((bIdx, i) => { if(bIdx !== null) curBank[bIdx].used = false; curAttempt[i] = null; });
+      updateSlots(); renderBank();
+    }, 1000);
+  }
+}
+
+function nextLevel() { curIdx++; if(curIdx >= levels.length) curIdx = 0; loadLevel(); }
+
+function giveHint() {
+  const target = levels[curIdx].a.replace(/\s/g, '');
+  const empty = curAttempt.indexOf(null); if(empty === -1) return;
+  const bIdx = curBank.findIndex(b => !b.used && b.char === target[empty]);
+  if(bIdx !== -1) placeLetter(bIdx);
+}
+</script>
+</body>
+</html>
